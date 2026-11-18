@@ -15,6 +15,7 @@ Entre os recursos disponíveis estão:
 - acesso ao conteúdo EAD institucional do projeto;
 - checklist de validação antes da publicação de uma oferta;
 - plano de ação com registro local de demandas e acompanhamento de status;
+- fluxo visual de implantação conectando catálogo, documentos, operação, atendimento e melhoria contínua;
 - layout responsivo para desktop e dispositivos móveis.
 
 ## Como acessar
@@ -45,7 +46,7 @@ Também é possível usar o Live Server do VS Code ou qualquer outro servidor es
 ├── 339_PC_Técnico_Marketing - EAD.html     # Página do Técnico em Marketing
 ├── app.js                                  # FAQ, checklists e registro de demandas
 ├── styles.css                              # Estilos principais
-├── legacy-course.css                       # Estilos complementares de páginas legadas
+├── legacy-course.css                       # Estilos legados mantidos para referência
 ├── *.pdf                                   # Planos e documentos oficiais de referência
 └── PROMPT_REFINADO.md                      # Contexto de elaboração do projeto
 ```
