@@ -62,37 +62,80 @@ const faqItems = [
 
 function escapeHtml(value) { return String(value).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[char])); }
 
-const courseExamples = {
-    'Administração': {
-        'Ambientes e Teams': 'Na UC de projetos, publique no Teams um diagnóstico de uma pequena empresa, use a aula presencial para discutir prioridades e peça uma proposta de melhoria como evidência.',
-        'Planejamento': 'Ao organizar uma UC de processos, encadeie o RDD de mapeamento antes da oficina presencial e feche com um fluxograma comentado.',
-        'Registros e avaliação': 'No fechamento de uma atividade de custos ou qualidade, confira entrega, feedback e frequência no mesmo ciclo, antes de iniciar a próxima UC.'
-    },
-    'Recursos Humanos': {
-        'Ambientes e Teams': 'Na UC de desenvolvimento de pessoas, use o Teams para orientar uma análise de clima e a aula presencial para transformar os achados em uma ação de gestão.',
-        'Planejamento': 'Antes de uma UC de cargos e salários, apresente o RDD de estrutura de cargos e use a prática presencial para comparar critérios e justificar decisões.',
-        'Registros e avaliação': 'Para uma atividade de entrevista ou plano de desenvolvimento, registre a evidência combinada e acione preventivamente quem não conseguiu entregar.'
-    },
-    'Contabilidade': {
-        'Ambientes e Teams': 'Na UC de rotinas contábeis, deixe o passo a passo e o caso no Teams; na aula presencial, peça que a turma identifique inconsistências e sustente a correção.',
-        'Planejamento': 'Use a concomitância entre UCs para retomar um caso de fluxo financeiro quando a turma iniciar crédito, cobrança ou tesouraria.',
-        'Registros e avaliação': 'Ao avaliar um lançamento ou conciliação, guarde a produção final e o feedback no canal da UC e mantenha a frequência no sistema oficial.'
-    },
-    'Logística': {
-        'Ambientes e Teams': 'Na UC de armazenagem, libere um RDD sobre layout e use o encontro presencial para simular decisões de estoque, segurança e fluxo.',
-        'Planejamento': 'Mapeie a relação entre estoque, transporte e compras para que os prazos do Teams não concorram com a entrega do projeto integrador.',
-        'Registros e avaliação': 'Se a equipe não entregar o mapa de processo, faça contato antes do fechamento, esclareça a evidência e registre a decisão de acompanhamento.'
-    },
-    'Marketing': {
-        'Ambientes e Teams': 'Na UC de campanhas, conecte o RDD de pesquisa ao briefing presencial e peça que a turma justifique público, mensagem e indicador.',
-        'Planejamento': 'Libere pesquisa, plano e análise de KPI em sequência, articulando as etapas com as UCs e o PI Técnico em Marketing.',
-        'Registros e avaliação': 'No fechamento de uma campanha, confira evidência, feedback, frequência e eventual recuperação antes de avançar para a próxima etapa.'
-    }
+const courseProfiles = {
+    'Administração': {uc:'processos administrativos', focus:'processos, projetos e indicadores', resource:'um RDD sobre mapeamento de processos', case:'o fluxo de atendimento de uma pequena empresa', evidence:'um fluxograma com pontos de melhoria', pi:'um plano de melhoria organizacional', metric:'tempo de atendimento e retrabalho', team:'a equipe responsável pelo atendimento', stakeholder:'o gestor de uma pequena empresa', scenario:'um diagnóstico organizacional'},
+    'Recursos Humanos': {uc:'desenvolvimento de pessoas', focus:'pessoas, clima e desenvolvimento', resource:'um RDD sobre análise de clima', case:'os dados fictícios de uma equipe', evidence:'uma proposta de ação de desenvolvimento', pi:'um plano de desenvolvimento de pessoas', metric:'adesão e participação da equipe', team:'a equipe de RH', stakeholder:'a liderança da área', scenario:'um diagnóstico de clima'},
+    'Contabilidade': {uc:'rotinas contábeis', focus:'registros, controles e análise financeira', resource:'um RDD sobre conciliação', case:'os lançamentos de uma empresa simulada', evidence:'uma conciliação com justificativa técnica', pi:'um relatório de análise contábil', metric:'divergências e tempo de fechamento', team:'a equipe responsável pelos lançamentos', stakeholder:'o responsável financeiro', scenario:'uma conferência de saldos'},
+    'Logística': {uc:'armazenagem e operações logísticas', focus:'estoque, armazenagem e transporte', resource:'um RDD sobre layout e fluxo', case:'o fluxo de entrada e saída de um armazém', evidence:'um mapa de processo com proposta de melhoria', pi:'um plano de melhoria logística', metric:'tempo de separação e nível de estoque', team:'a equipe do armazém', stakeholder:'o responsável pela operação', scenario:'um diagnóstico de fluxo'},
+    'Marketing': {uc:'campanhas e relacionamento', focus:'pesquisa, campanhas e relacionamento', resource:'um RDD sobre pesquisa de mercado', case:'o lançamento de uma campanha para uma empresa simulada', evidence:'um briefing com público, mensagem e indicador', pi:'um plano de campanha', metric:'alcance, conversão e engajamento', team:'a equipe responsável pela campanha', stakeholder:'o responsável pelo negócio', scenario:'um diagnóstico de público'}
+};
+
+const faqExampleTemplates = {
+    1: p => `Na UC de ${p.uc}, o estudante explora ${p.resource} no dia EAD, aplica o conteúdo em ${p.case} no presencial e entrega ${p.evidence}.`,
+    2: p => `Para cumprir a carga EAD de ${p.uc}, publique ${p.resource} no prazo previsto, acompanhe a atividade no Teams e registre ${p.evidence} como parte da carga oficial.`,
+    3: p => `Ao explicar o limite de EAD na UC de ${p.uc}, mostre no cronograma quais horas são presenciais e quais são a distância; a atividade de EAD deve continuar ligada a ${p.focus}.`,
+    4: p => `Distribua o EAD de ${p.uc} para preparar ${p.resource} e reserve o presencial para aplicar o conteúdo em ${p.case}; a tabela do PC deve sustentar essa escolha.`,
+    5: p => `Se a aula EAD de ${p.uc} ocorrer em outro dia, mantenha no Teams a mesma janela de entrega para ${p.evidence} e confira a conclusão antes do encerramento da UC.`,
+    6: p => `No PI, a turma pode usar ${p.case} como situação-problema e conectar ${p.evidence} às demais UCs, conforme o desenho do PC para ${p.pi}.`,
+    7: p => `Na equipe do Teams de ${p.uc}, organize ${p.resource}, a orientação da atividade e o retorno sobre ${p.evidence}; o ambiente deve apoiar a autoria, não apenas armazenar arquivos.`,
+    8: p => `Como ${p.resource} pode ser acessado em celular, informe que a turma não deve depender de laboratório; combine uma alternativa de acesso e uma janela para realizar ${p.evidence}.`,
+    9: p => `Na Ambientação, mostre ao estudante onde encontrar a equipe de ${p.uc}, o calendário de ${p.case} e o canal de suporte antes da primeira atividade EAD.`,
+    10: p => `Na Página Inicial da sala de ${p.uc}, apresente boas-vindas, prazos, ${p.resource} e a evidência esperada: ${p.evidence}.`,
+    11: p => `Antes da liberação da turma de ${p.uc}, confira se a equipe automática tem docente, estudantes, nome da UC, módulos e o link correto para ${p.resource}.`,
+    12: p => `Para ${p.resource}, ofereça uma orientação curta para celular e conexão limitada; por exemplo, permita que o estudante consulte o material e envie ${p.evidence} em arquivo leve.`,
+    13: p => `Ao compartilhar ${p.resource} na UC de ${p.uc}, explique que o estudante deve entrar com a conta institucional e testar o acesso antes do prazo de ${p.evidence}.`,
+    14: p => `No módulo Atividades de Aula de ${p.uc}, organize a sequência: orientação sobre ${p.resource}, prazo, instrução para trabalhar em ${p.case} e entrega de ${p.evidence}.`,
+    15: p => `Libere ${p.resource} antes da discussão de ${p.case} e só depois abra a entrega de ${p.evidence}; assim a turma percorre ${p.focus} em etapas, sem receber tudo de uma vez.`,
+    16: p => `Depois de acompanhar ${p.evidence} no Teams, transfira frequência e demais registros da UC de ${p.uc} para o Senac Solution; o Teams não substitui o sistema oficial.`,
+    17: p => `Para ${p.evidence}, escreva no enunciado o formato aceito, o prazo e o critério de qualidade; a turma pode anexar um arquivo, responder um quiz ou registrar a decisão sobre ${p.case}.`,
+    18: p => `Devolva no Teams um comentário sobre ${p.evidence} e use o Senac Solution para registrar a atividade, a frequência e o resultado correspondente da UC de ${p.uc}.`,
+    19: p => `Se o link de ${p.resource} falhar para a turma de ${p.uc}, registre turma, UC, endereço, mensagem de erro e data; a unidade encaminha o chamado pela Central de Serviços.`,
+    20: p => `Ao montar o cronograma mínimo, distribua ${p.uc}, ${p.resource} e a entrega de ${p.evidence} em uma janela que permita retomar ${p.case} sem concentrar tudo no fechamento.`,
+    21: p => `Cruze PC, PO e PCTD para decidir quando a turma de ${p.uc} estudará ${p.resource}, praticará ${p.case} e consolidará ${p.evidence}; o calendário precisa mostrar essa progressão.`,
+    22: p => `Mesmo que a primeira UC seja presencial, reserve desde a primeira semana o dia EAD para ambientar a turma, apresentar ${p.resource} e explicar como será acompanhado ${p.evidence}.`,
+    23: p => `Ao definir o dia EAD da turma, verifique o impacto no acesso à equipe de ${p.uc}, no prazo de ${p.evidence} e na disponibilidade de ${p.team}; registre a decisão e comunique todos.`,
+    24: p => `Em uma turma migrada, confira se a sexta-feira EAD comporta ${p.resource}, o prazo de ${p.evidence} e as demais aulas de ${p.uc} sem reduzir os cinco dias letivos.`,
+    25: p => `Se ${p.uc} exigir mais de um dia EAD, trate como exceção: distribua ${p.resource} e ${p.evidence} em dias distintos, valide o calendário e documente o motivo.`,
+    26: p => `Só flexibilize o dia EAD se a sequência de ${p.uc} estiver ameaçada; por exemplo, registre a decisão para preservar a entrega de ${p.evidence}, e não para compensar ausência docente.`,
+    27: p => `No turno noturno, confira a conversão da carga de ${p.uc} antes de lançar ${p.resource} e ${p.evidence}; o calendário deve fechar com a duração prevista no PC.`,
+    28: p => `Se ${p.uc} concentrar muita carga EAD, use concomitância ou inicie ${p.resource} depois do encontro presencial sobre ${p.case}, sem deixar o EAD superar o presencial.`,
+    29: p => `Na aula presencial de ${p.uc}, o docente pode escolher a melhor estratégia para trabalhar ${p.case}; deve manter ${p.resource}, a competência e ${p.evidence} previstos no PO.`,
+    30: p => `Conecte ${p.resource} a uma decisão sobre ${p.case} e transforme a discussão presencial em ${p.evidence}; essa ponte torna visível a integração entre os dois tempos da UC.`,
+    31: p => `Para integrar UCs, faça ${p.resource} alimentar uma etapa de ${p.pi}; depois, use o presencial para revisar ${p.evidence} com base nos conteúdos de ${p.focus}.`,
+    32: p => `Em ${p.uc}, peça que a turma compare a fonte usada em ${p.resource}, justifique as escolhas para ${p.case} e registre autoria, credibilidade e impacto na evidência final.`,
+    33: p => `Após a entrega de ${p.evidence}, o docente ainda precisa lançar atividade e frequência da UC de ${p.uc} no Senac Solution; o cadastro não ocorre automaticamente.`,
+    34: p => `No Diário de Classe, registre que a turma analisou ${p.case}, aplicou ${p.resource} e produziu ${p.evidence}; descreva objetivo e estratégia na data correta.`,
+    35: p => `Para comprovar a frequência na atividade EAD de ${p.uc}, defina antes se valerá a entrega de ${p.evidence}, uma participação síncrona ou outra evidência prevista, e lance no SS.`,
+    36: p => `Se ${p.uc} não exigir arquivo, crie no Teams uma autodeclaração com perguntas sobre ${p.resource} e ${p.case}; use as respostas no prazo para ajustar a frequência no SS.`,
+    37: p => `No fechamento de ${p.uc}, lance a menção uma única vez na linha de maior carga e registre a atividade/frequência EAD vinculada a ${p.evidence}, sem duplicar o resultado.`,
+    38: p => `Se ${p.resource} continuar por mais de um encontro, intercale as etapas de ${p.evidence}, registre cada atividade na data prevista e reserve uma conferência antes do fechamento de ${p.uc}.`,
+    39: p => `Ao abrir o Diário de Classe de ${p.uc}, localize as duas linhas e confirme que a avaliação de ${p.evidence} está na linha de maior carga, enquanto a outra recebe atividade e frequência.`,
+    40: p => `Antes de publicar notas de ${p.uc}, confira se a Lista de Atividades de ${p.evidence} está encerrada, se a frequência foi revisada e se não há pendência de ${p.team}.`,
+    41: p => `Explique à turma de ${p.uc} que uma ausência na atividade EAD de ${p.resource} compõe a frequência total da UC junto com a aula presencial sobre ${p.case}.`,
+    42: p => `Se o estudante não entregar ${p.evidence} ou acumular faltas na UC de ${p.uc}, faça contato preventivo, registre o sinal e combine uma ação de recuperação antes do fechamento.`,
+    43: p => `Ao perceber risco de reprovação por falta em ${p.uc}, mostre ao estudante como as faltas presenciais e EAD somam e registre o encaminhamento antes que o limite seja ultrapassado.`,
+    44: p => `Uma atividade digital em ${p.uc} pode ser a produção de ${p.evidence}, desde que desenvolva ${p.focus} e esteja prevista no PO; o recurso não deve ser usado apenas por novidade.`,
+    45: p => `Depois que a turma entregar ${p.evidence}, devolva um feedback sobre a decisão tomada em ${p.case}; se houver autocorreção, oriente a revisão e registre o encaminhamento.`,
+    46: p => `Se houver pedido de recuperação ou transferência relacionado a ${p.uc}, siga o fluxo institucional; não crie uma reposição informal para substituir ${p.evidence}.`,
+    47: p => `No dia EAD de ${p.uc}, o docente pode mediar ${p.resource}, analisar ${p.evidence} e registrar feedback; esse trabalho faz parte da atuação, não é um dia sem atividade docente.`,
+    48: p => `O tempo do dia EAD pode apoiar a preparação da aula presencial sobre ${p.case}, a análise de ${p.evidence} e a apropriação do PO, sem ser usado em outro curso com registro.`,
+    49: p => `Se o PO permitir, o docente pode trocar a ordem interna de ${p.resource} e ${p.case} dentro de ${p.uc}, mas não pode retirar a evidência ${p.evidence} nem deslocá-la para outra UC.`,
+    50: p => `No PI síncrono, a turma pode defender ${p.pi} usando ${p.evidence}; presenças e atividade seguem o lançamento previsto para a carga docente do PI.`,
+    51: p => `Uma mediação remota do PI de ${p.uc} só deve ocorrer com aprovação da gestão; por exemplo, a equipe pode apresentar ${p.pi} em reunião síncrona e registrar a decisão.`,
+    52: p => `Escolha o recurso pelo objetivo: um mapa para organizar ${p.case}, um quiz para verificar conceitos de ${p.focus} e um caso para decidir sobre ${p.evidence}.`,
+    53: p => `Na UC de ${p.uc}, acesse ${p.resource} pela Plataforma Senac de Recursos Didáticos Digitais usando o link indicado no PO; não substitua por uma cópia externa sem validação.`,
+    54: p => `Antes de iniciar ${p.resource}, pergunte se alguém precisa de legenda, transcrição, descrição ou outro apoio; depois confirme se consegue produzir ${p.evidence} pelo canal combinado.`,
+    55: p => `Use ${p.resource} como objeto de análise: a turma identifica linguagem, fonte e intenção em um material sobre ${p.case} e propõe uma versão ética ou mais acessível.`,
+    56: p => `Se a turma de ${p.uc} demonstrar dificuldade recorrente para acessar ${p.resource}, registre o padrão e avalie com a gestão o encaminhamento para a oficina de inclusão digital.`,
+    57: p => `Ao reportar falha em ${p.resource}, anexe a captura de tela, o link, a UC de ${p.uc}, a turma, o horário e o perfil afetado; a unidade abre o chamado correto.`,
+    58: p => `No cadastro da oferta de ${p.uc}, lance dias e horários presencial e EAD, depois compare com o cronograma do Teams e com o prazo de ${p.evidence} antes de iniciar a turma.`,
+    59: p => `No encerramento de ${p.uc}, confirme registros, frequência, avaliação e ${p.evidence}; a certificação segue o processo institucional e não ganha uma etapa extra por causa do EAD.`
 };
 
 function getCourseExample(item, course) {
-    const examples = courseExamples[course] || courseExamples.Marketing;
-    return examples[item.cat] || examples['Ambientes e Teams'] || 'Adapte a orientação ao curso, à UC e à evidência prevista no PC e no PO.';
+    const profile = courseProfiles[course] || courseProfiles.Marketing;
+    const template = faqExampleTemplates[item.id];
+    return template ? template(profile) : `Na UC de ${profile.uc}, aplique a orientação ao contexto de ${profile.focus} e documente a evidência prevista no PC e no PO.`;
 }
 
 function renderFaq(items = faqItems, course = 'Administração') {
