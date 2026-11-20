@@ -62,7 +62,40 @@ const faqItems = [
 
 function escapeHtml(value) { return String(value).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[char])); }
 
-function renderFaq(items = faqItems) {
+const courseExamples = {
+    'Administração': {
+        'Ambientes e Teams': 'Na UC de projetos, publique no Teams um diagnóstico de uma pequena empresa, use a aula presencial para discutir prioridades e peça uma proposta de melhoria como evidência.',
+        'Planejamento': 'Ao organizar uma UC de processos, encadeie o RDD de mapeamento antes da oficina presencial e feche com um fluxograma comentado.',
+        'Registros e avaliação': 'No fechamento de uma atividade de custos ou qualidade, confira entrega, feedback e frequência no mesmo ciclo, antes de iniciar a próxima UC.'
+    },
+    'Recursos Humanos': {
+        'Ambientes e Teams': 'Na UC de desenvolvimento de pessoas, use o Teams para orientar uma análise de clima e a aula presencial para transformar os achados em uma ação de gestão.',
+        'Planejamento': 'Antes de uma UC de cargos e salários, apresente o RDD de estrutura de cargos e use a prática presencial para comparar critérios e justificar decisões.',
+        'Registros e avaliação': 'Para uma atividade de entrevista ou plano de desenvolvimento, registre a evidência combinada e acione preventivamente quem não conseguiu entregar.'
+    },
+    'Contabilidade': {
+        'Ambientes e Teams': 'Na UC de rotinas contábeis, deixe o passo a passo e o caso no Teams; na aula presencial, peça que a turma identifique inconsistências e sustente a correção.',
+        'Planejamento': 'Use a concomitância entre UCs para retomar um caso de fluxo financeiro quando a turma iniciar crédito, cobrança ou tesouraria.',
+        'Registros e avaliação': 'Ao avaliar um lançamento ou conciliação, guarde a produção final e o feedback no canal da UC e mantenha a frequência no sistema oficial.'
+    },
+    'Logística': {
+        'Ambientes e Teams': 'Na UC de armazenagem, libere um RDD sobre layout e use o encontro presencial para simular decisões de estoque, segurança e fluxo.',
+        'Planejamento': 'Mapeie a relação entre estoque, transporte e compras para que os prazos do Teams não concorram com a entrega do projeto integrador.',
+        'Registros e avaliação': 'Se a equipe não entregar o mapa de processo, faça contato antes do fechamento, esclareça a evidência e registre a decisão de acompanhamento.'
+    },
+    'Marketing': {
+        'Ambientes e Teams': 'Na UC de campanhas, conecte o RDD de pesquisa ao briefing presencial e peça que a turma justifique público, mensagem e indicador.',
+        'Planejamento': 'Libere pesquisa, plano e análise de KPI em sequência, articulando as etapas com as UCs e o PI Técnico em Marketing.',
+        'Registros e avaliação': 'No fechamento de uma campanha, confira evidência, feedback, frequência e eventual recuperação antes de avançar para a próxima etapa.'
+    }
+};
+
+function getCourseExample(item, course) {
+    const examples = courseExamples[course] || courseExamples.Marketing;
+    return examples[item.cat] || examples['Ambientes e Teams'] || 'Adapte a orientação ao curso, à UC e à evidência prevista no PC e no PO.';
+}
+
+function renderFaq(items = faqItems, course = 'Administração') {
     const list = document.querySelector('[data-faq-list]');
     if (!list) return;
     list.innerHTML = items.map(item => `
@@ -71,6 +104,7 @@ function renderFaq(items = faqItems) {
             <div class="faq-body">
                 <div class="answer"><strong>Orientação da FAQ:</strong> ${escapeHtml(item.a)}</div>
                 <div class="comment"><strong>Comentário de aplicação local:</strong> ${escapeHtml(item.c)}</div>
+                <div class="example-box"><span class="course-context">Exemplo em ${escapeHtml(course)}:</span> ${escapeHtml(getCourseExample(item, course))}</div>
                 <span class="chip mt-3">${escapeHtml(item.cat)}</span>
             </div>
         </details>`).join('');
@@ -82,19 +116,21 @@ function initFaq() {
     if (!document.querySelector('[data-faq-list]')) return;
     const search = document.querySelector('[data-faq-search]');
     const category = document.querySelector('[data-faq-category]');
+    const course = document.querySelector('[data-faq-course]');
     const apply = () => {
         const term = (search?.value || '').toLowerCase().trim();
         const cat = category?.value || 'all';
         renderFaq(faqItems.filter(item => {
             const haystack = `${item.q} ${item.a} ${item.c} ${item.cat}`.toLowerCase();
             return (!term || haystack.includes(term)) && (cat === 'all' || item.cat === cat);
-        }));
+        }), course?.value || 'Administração');
     };
     search?.addEventListener('input', apply);
     category?.addEventListener('change', apply);
+    course?.addEventListener('change', apply);
     document.querySelector('[data-faq-open]')?.addEventListener('click', () => document.querySelectorAll('[data-faq-list] details').forEach(item => item.open = true));
     document.querySelector('[data-faq-close]')?.addEventListener('click', () => document.querySelectorAll('[data-faq-list] details').forEach(item => item.open = false));
-    renderFaq();
+    renderFaq(faqItems, course?.value || 'Administração');
 }
 
 function initChecklists() {
@@ -224,4 +260,132 @@ function initDemandPresets() {
     }));
 }
 
-document.addEventListener('DOMContentLoaded', () => { initFaq(); initChecklists(); initScenario(); initDemandTracker(); initDemandFormGuidance(); initDemandPresets(); });
+function initGuideChecklist() {
+    const boxes = [...document.querySelectorAll('[data-checklist-item="guia"]')];
+    if (!boxes.length) return;
+    const key = 'senac-checklist-guia-detalhado';
+    const progress = document.querySelector('[data-checklist-progress="guia"]');
+    const bar = document.querySelector('[data-checklist-bar="guia"]');
+    const update = () => {
+        const done = boxes.filter(box => box.checked).length;
+        localStorage.setItem(key, JSON.stringify(boxes.map(box => box.checked)));
+        if (progress) progress.textContent = `${done}/${boxes.length} checkpoints concluídos`;
+        if (bar) bar.style.width = `${boxes.length ? done / boxes.length * 100 : 0}%`;
+    };
+    try { (JSON.parse(localStorage.getItem(key) || '[]')).forEach((checked, i) => { if (boxes[i]) boxes[i].checked = checked; }); } catch (_) {}
+    boxes.forEach(box => box.addEventListener('change', update));
+    update();
+}
+
+function initDeck() {
+    const deck = document.querySelector('[data-deck]');
+    if (!deck) return;
+    const slides = [...deck.querySelectorAll('[data-slide]')];
+    const dots = deck.querySelector('.deck-dots');
+    const counter = deck.querySelector('[data-slide-counter]');
+    const progress = deck.querySelector('[data-deck-progress]');
+    let index = 0;
+    slides.forEach((_, i) => {
+        const dot = document.createElement('button');
+        dot.className = `deck-dot${i === 0 ? ' active' : ''}`;
+        dot.type = 'button';
+        dot.setAttribute('aria-label', `Ir para o slide ${i + 1}`);
+        dot.addEventListener('click', () => show(i));
+        dots?.appendChild(dot);
+    });
+    const show = next => {
+        index = (next + slides.length) % slides.length;
+        slides.forEach((slide, i) => slide.classList.toggle('active', i === index));
+        deck.querySelectorAll('.deck-dot').forEach((dot, i) => dot.classList.toggle('active', i === index));
+        if (counter) counter.textContent = index + 1;
+        if (progress) progress.style.width = `${((index + 1) / slides.length) * 100}%`;
+        const nextButton = deck.querySelector('[data-deck-next]');
+        if (nextButton) nextButton.innerHTML = index === slides.length - 1 ? 'Recomeçar <i class="fa-solid fa-rotate-right ms-1"></i>' : 'Próximo <i class="fa-solid fa-arrow-right ms-1"></i>';
+    };
+    deck.querySelector('[data-deck-prev]')?.addEventListener('click', () => show(index - 1));
+    deck.querySelector('[data-deck-next]')?.addEventListener('click', () => show(index + 1));
+    const fullscreenButton = deck.querySelector('[data-deck-fullscreen]');
+    const updateFullscreenLabel = () => {
+        if (!fullscreenButton) return;
+        const active = document.fullscreenElement === deck;
+        fullscreenButton.innerHTML = active ? '<i class="fa-solid fa-compress me-1"></i>Sair da tela cheia' : '<i class="fa-solid fa-expand me-1"></i>Tela cheia';
+    };
+    fullscreenButton?.addEventListener('click', async () => {
+        try {
+            if (document.fullscreenElement) await document.exitFullscreen();
+            else if (deck.requestFullscreen) await deck.requestFullscreen();
+            else deck.classList.toggle('deck-fallback-fullscreen');
+        } catch (_) { deck.classList.toggle('deck-fallback-fullscreen'); }
+        updateFullscreenLabel();
+    });
+    document.addEventListener('fullscreenchange', updateFullscreenLabel);
+    document.addEventListener('keydown', event => { if (event.key === 'ArrowRight') show(index + 1); if (event.key === 'ArrowLeft') show(index - 1); });
+}
+
+function initPresentationDetails() {
+    if (!document.querySelector('[data-deck]')) return;
+    const details = {
+        modalDiaP: `<p><strong>O que este marco muda:</strong> o estudante continua tendo uma jornada de cinco dias de aprendizagem, mas um desses dias acontece sem deslocamento físico. O dia EAD precisa ter objetivo, mediação, prazo e evidência; não é um “dia livre” nem um repositório de arquivos.</p><p><strong>Exemplo em Administração:</strong> antes da oficina presencial de processos, a turma explora um RDD sobre mapeamento. Na aula, compara o fluxo de uma pequena empresa, toma decisões e entrega um fluxograma comentado. O EAD prepara o repertório; o presencial aprofunda e verifica a competência.</p><p class="mb-0"><strong>Mensagem para a equipe:</strong> o modelo pedagógico permanece; a inovação está na combinação intencional dos tempos e das linguagens.</p>`,
+        modalEixos: `<ol><li><strong>Sensibilização:</strong> realize uma conversa curta com docentes, atendimento, secretaria e apoio de informática; registre as três principais resistências e responda cada uma com uma demonstração.</li><li><strong>Orientação:</strong> abra PC, PO, FAQ e demais documentos institucionais vigentes juntos e transforme a leitura em uma tabela “regra / decisão local / evidência”.</li><li><strong>Formação pedagógica:</strong> faça uma oficina entre pares em que cada docente acessa um RDD, desenha uma ponte com sua aula e recebe devolutiva.</li><li><strong>Operação & tecnologia:</strong> valide escala sem duplicidade, equipes do Teams, acesso, cronograma, frequência e apoio para a primeira semana.</li></ol><div class="example-box"><strong>Checkpoint:</strong> a unidade só avança quando consegue responder quem faz, em qual canal, até quando e qual registro comprova a ação.</div>`,
+        modalPapel: `<p><strong>Antes da oferta — técnica:</strong> confirma PC, PO, carga EAD, concomitância de UCs, cadastro, dia fixo, escala e responsáveis. <strong>Docência:</strong> escolhe a UC prioritária, explicita a ponte entre RDD e situação de aprendizagem e combina a evidência.</p><p><strong>Durante — dupla:</strong> acompanha uma fila única de dúvidas, identifica padrões de acesso ou não entrega, aciona o responsável e não espera o fechamento da UC para intervir.</p><p><strong>Depois — dupla:</strong> fecha pendências, registra o que funcionou e publica uma prática sem dados pessoais no grupo de pontos focais.</p><div class="example-box"><strong>Entrega em 7 dias:</strong> mapa de uma UC + mensagem de acolhida + teste de acesso + uma publicação com contexto, ação, evidência e aprendizagem.</div>`,
+        modalUC: `<p>O encadeamento evita que cada UC pareça uma tarefa isolada. Para cada unidade, preencha: competência em foco, repertório vindo da UC anterior, recurso EAD, atividade presencial, evidência e ligação com o PI.</p><p><strong>Exemplo em Recursos Humanos:</strong> um RDD sobre análise de clima é explorado antes da aula; no encontro presencial, a turma interpreta dados fictícios e propõe uma ação de desenvolvimento; no PI, justifica a solução com evidências.</p><ul class="mb-0"><li><strong>Teams:</strong> boas-vindas, agenda, instrução, entrega e feedback.</li><li><strong>Senac Solution:</strong> escala, diário, frequência e registros acadêmicos.</li><li><strong>Teams dos pontos focais:</strong> decisões da unidade e compartilhamento de práticas.</li></ul>`,
+        modalAcolhimento: `<p>Reserve uma oficina no segundo ou terceiro dia, com apoio da informática quando necessário. O roteiro mínimo é: entrar com a conta institucional, localizar a equipe, abrir um RDD, responder uma atividade de teste e saber onde pedir ajuda.</p><p><strong>Exemplo de evidência:</strong> cada estudante envia no Teams uma resposta curta à atividade simulada. A equipe registra apenas quem precisa de apoio, sem expor senha ou dado sensível.</p><div class="example-box"><strong>Critério de sucesso:</strong> ninguém sai apenas com o link; todos saem com uma ação concluída e um caminho claro para suporte.</div>`,
+        modalRDD: `<p>O RDD pode vir antes para ativar repertório ou depois para consolidar. A autonomia docente está em escolher a melhor mediação, mantendo a intencionalidade e os recursos institucionais.</p><p><strong>Exemplo em Contabilidade:</strong> a turma explora um caso de conciliação, chega à aula com uma hipótese, identifica inconsistências em grupos e registra a justificativa da correção. <strong>Exemplo em Logística:</strong> um vídeo sobre layout antecede uma simulação de fluxo e estoque.</p><p class="mb-0"><strong>Regra de desenho:</strong> sempre responda “o que o estudante fará com o que viu?” e “qual evidência mostrará a aprendizagem?”.</p>`,
+        modalTeams: `<p><strong>Modelo de postagem para o grupo de pontos focais:</strong></p><ol><li><strong>Contexto:</strong> curso, UC e desafio observado, sem nome ou dado pessoal.</li><li><strong>Ação:</strong> roteiro, oficina ou ajuste realizado.</li><li><strong>Evidência:</strong> checklist, relato, indicador ou material reutilizável.</li><li><strong>Aprendizagem:</strong> o que mudou e o que seria ajustado.</li><li><strong>Pergunta:</strong> qual parte outra unidade poderia adaptar?</li></ol><div class="template-box">[UNIDADE] [CURSO/UC] — acolhimento digital<br>Contexto: estudantes não localizavam a equipe.<br>Ação: oficina guiada no laboratório + primeira atividade.<br>Evidência: checklist de acesso concluído.<br>Aprendizagem: o teste prático reduziu dúvidas recorrentes.<br>Pergunta: como vocês organizam o acompanhamento na primeira semana?</div><p class="mb-0 mt-3">O Teams coordena o caso e o grupo amplia a aprendizagem. Não publique credenciais, prints identificáveis ou situações individuais.</p>`
+    };
+    Object.entries(details).forEach(([id, html]) => {
+        const modal = document.getElementById(id);
+        const body = modal?.querySelector('.modal-body');
+        if (body) body.innerHTML = html;
+    });
+}
+
+function initPresentationModal() {
+    const deck = document.querySelector('[data-deck]');
+    const infoButton = deck?.querySelector('[data-deck-info]');
+    if (!deck || !infoButton || !window.bootstrap) return;
+
+    deck.querySelectorAll('.deck-card .plus-button').forEach(button => button.remove());
+    document.querySelectorAll('body > .modal[id^="modal"]').forEach(modal => {
+        bootstrap.Modal.getInstance(modal)?.dispose();
+        modal.remove();
+    });
+
+    const slideDetails = [
+        {title: 'Dia P: o que muda e o que permanece', body: '<p><strong>O que muda:</strong> um dos cinco dias de aprendizagem acontece sem deslocamento físico, com objetivo, mediação, prazo e evidência. Não é um dia livre nem um repositório de arquivos.</p><p><strong>Exemplo em Administração:</strong> antes da oficina presencial de processos, a turma explora um RDD sobre mapeamento. Na aula, compara o fluxo de uma pequena empresa, toma decisões e entrega um fluxograma comentado.</p><p class="mb-0"><strong>O que permanece:</strong> competências, marcas formativas, carga aprovada, avaliação e certificação do curso.</p>'},
+        {title: 'Os quatro eixos da implantação', body: '<ol><li><strong>Sensibilização:</strong> escutar docentes, atendimento, secretaria e apoio de informática; registrar resistências e responder com demonstrações.</li><li><strong>Orientação:</strong> cruzar PC, PO, FAQ e demais documentos institucionais vigentes em uma tabela de regra, decisão local e evidência.</li><li><strong>Formação pedagógica:</strong> cada docente acessa um RDD, desenha uma ponte com sua aula e recebe devolutiva.</li><li><strong>Operação & tecnologia:</strong> validar escala, Teams, acessos, cronograma, frequência e apoio na primeira semana.</li></ol><div class="example-box"><strong>Checkpoint:</strong> a unidade sabe quem faz, em qual canal, até quando e qual registro comprova a ação.</div>'},
+        {title: 'O papel dos pontos focais', body: '<p><strong>Antes da oferta:</strong> a técnica confirma PC, PO, carga EAD, concomitância, cadastro, dia fixo e responsáveis; a docência escolhe uma UC prioritária e define a evidência.</p><p><strong>Durante:</strong> a dupla acompanha acesso, entrega e dúvidas; identifica padrões; aciona responsáveis e intervém antes do fechamento da UC.</p><p class="mb-0"><strong>Depois:</strong> fecha pendências e publica uma prática sem dados pessoais no grupo de pontos focais.</p><div class="example-box"><strong>Entrega em 7 dias:</strong> mapa de uma UC + mensagem de acolhida + teste de acesso + publicação com contexto, ação, evidência e aprendizagem.</div>'},
+        {title: 'Encadeamento de UCs e canais', body: '<p>Para cada UC, registre competência, repertório vindo da UC anterior, RDD, atividade presencial, evidência e ligação com o PI. Assim, o estudante entende a continuidade do percurso.</p><p><strong>Exemplo em Recursos Humanos:</strong> um RDD sobre análise de clima é explorado antes da aula; no encontro presencial, a turma interpreta dados fictícios e propõe uma ação de desenvolvimento.</p><ul class="mb-0"><li><strong>Teams:</strong> boas-vindas, agenda, instruções, entregas e feedback.</li><li><strong>Senac Solution:</strong> escala, diário, frequência e registros acadêmicos.</li><li><strong>Teams dos pontos focais:</strong> decisões da unidade e práticas compartilhadas.</li></ul>'},
+        {title: 'Acolhimento digital na primeira semana', body: '<p>Reserve uma oficina no segundo ou terceiro dia. O roteiro mínimo é: entrar com a conta institucional, localizar a equipe, abrir um RDD, responder uma atividade de teste e saber onde pedir ajuda.</p><p><strong>Exemplo de evidência:</strong> cada estudante envia no Teams uma resposta curta à atividade simulada; a equipe registra somente quem precisa de apoio.</p><div class="example-box"><strong>Critério de sucesso:</strong> ninguém sai apenas com um link; todos saem com uma ação concluída e um caminho claro para suporte.</div>'},
+        {title: 'RDD conectado à prática', body: '<p>O RDD pode vir antes para ativar repertório ou depois para consolidar. A docência escolhe a mediação, mantendo a intencionalidade e os recursos institucionais.</p><p><strong>Contabilidade:</strong> a turma explora um caso de conciliação, identifica inconsistências e registra a justificativa da correção. <strong>Logística:</strong> um vídeo sobre layout antecede uma simulação de fluxo e estoque.</p><p class="mb-0"><strong>Perguntas de desenho:</strong> o que o estudante fará com o que viu? Qual evidência mostrará a aprendizagem?</p>'},
+        {title: 'Como compartilhar com outros pontos focais', body: '<p>Publique no grupo específico do Teams em cinco movimentos: <strong>contexto</strong>, <strong>ação</strong>, <strong>evidência</strong>, <strong>aprendizagem</strong> e <strong>pergunta para adaptação</strong>.</p><div class="template-box">[UNIDADE] [CURSO/UC] — acolhimento digital<br>Contexto: estudantes não localizavam a equipe.<br>Ação: oficina guiada + primeira atividade.<br>Evidência: checklist de acesso concluído.<br>Aprendizagem: o teste prático reduziu dúvidas.<br>Pergunta: como vocês acompanham a primeira semana?</div><p class="mb-0 mt-3">O Teams coordena o caso e o grupo amplia a aprendizagem. Não publique credenciais, prints identificáveis ou situações individuais.</p>'},
+        {title: 'Próximo passo em sete dias', body: '<ol><li><strong>Hoje:</strong> confirmar curso, turma, UC prioritária e dupla de pontos focais.</li><li><strong>Em 3 dias:</strong> revisar PC, PO, FAQ, cronograma, Teams e responsabilidades.</li><li><strong>Em 7 dias:</strong> realizar acolhimento digital e publicar a primeira síntese no grupo de pontos focais.</li></ol><div class="example-box"><strong>Saída esperada:</strong> uma decisão simples, uma evidência concreta e uma melhoria que possa ser repetida por outra unidade.</div>'}
+    ];
+
+    const modal = document.createElement('div');
+    modal.className = 'modal fade';
+    modal.id = 'modalSlideInfo';
+    modal.tabIndex = -1;
+    modal.setAttribute('aria-hidden', 'true');
+    modal.innerHTML = '<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h2 class="modal-title h5"></h2><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button></div><div class="modal-body"></div></div></div>';
+    deck.appendChild(modal);
+    const modalTitle = modal.querySelector('.modal-title');
+    const modalBody = modal.querySelector('.modal-body');
+    const instance = bootstrap.Modal.getOrCreateInstance(modal);
+    const fillModal = () => {
+        const current = slideDetails[Number(deck.querySelector('.deck-slide.active')?.dataset.slide || 0)] || slideDetails[0];
+        modalTitle.textContent = current.title;
+        modalBody.innerHTML = current.body;
+    };
+    infoButton.addEventListener('click', () => { fillModal(); instance.show(); });
+    const moveBackdrop = () => {
+        const backdrop = document.querySelector('.modal-backdrop');
+        if (!backdrop) return;
+        if (document.fullscreenElement === deck && !deck.contains(backdrop)) deck.appendChild(backdrop);
+        if (document.fullscreenElement !== deck && deck.contains(backdrop)) document.body.appendChild(backdrop);
+    };
+    modal.addEventListener('shown.bs.modal', moveBackdrop);
+    document.addEventListener('fullscreenchange', moveBackdrop);
+}
+
+document.addEventListener('DOMContentLoaded', () => { initFaq(); initChecklists(); initGuideChecklist(); initDeck(); initPresentationDetails(); initPresentationModal(); initScenario(); initDemandTracker(); initDemandFormGuidance(); initDemandPresets(); });
